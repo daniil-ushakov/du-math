@@ -1,33 +1,36 @@
-# DM Math
+# DU Math
 
-Небольшая библиотека математических функций на C99 с совместимым интерфейсом для C++.
+Математическая библиотека на C99 для микроконтроллеров и ПК. Поддерживает C++ через extern "C". Не использует динамическую память.
 
-Функции: `dmAbs`, `dmMod`, `dmSin`, `dmCos`, `dmTan`, `dmCot`, `dmLn`, `dmLog`, `dmExp`, `dmPow`, `dmSqrt`.
+## Использование на микроконтроллере
 
-## Подключение
+- Только float: добавьте include/du_math.h и src/du_math_f32.c.
+- Поддержка double: отдельно добавьте src/du_math_f64.c.
+- Функции duSinF, duCosF, duLnF и аналогичные вызывают стандартные функции C (sinf, cosf, logf и т. п.). Их скорость и размер прошивки определяются реализацией libm и компилятором; они не обязательно быстрее libm.
+- duFastSinF и duFastCosF не вызывают libm и используют полиномиальные приближения. **Аргумент обязательно должен лежать в интервале [-π, π].** Целевая максимальная абсолютная ошибка — 1e-5 на этом интервале. Для произвольных аргументов используйте duSinF/duCosF или предварительное приведение угла.
+- duPowIF и duPowI вычисляют целочисленные степени методом двоичного возведения.
 
-Добавьте `include/DM_math.h` и `src/DM_math.c` в проект. Заголовочный файл допускает включение из C++ (`extern "C"`). При сборке GCC используйте `-lm`.
+## Пример C99
 
-```c
-#include "DM_math.h"
-double value = dmSin(DM_PI / 4.0);
-```
+~~~c
+#include "du_math.h"
 
-## Сборка вручную
+float a = duSinF(DU_PI_F / 6.0f);
+float b = duFastSinF(DU_PI_F / 6.0f);
+float c = duPowIF(2.0f, 10);
+~~~
 
-```sh
-gcc -std=c99 -Iinclude src/DM_math.c examples/math_demo.c -lm -o math_demo
-gcc -std=c99 -Iinclude src/DM_math.c tests/test_math.c -lm -o test_math
+## API
+
+Float: duAbsF, duModF, duSinF, duCosF, duTanF, duCotF, duLnF, duLogF, duExpF, duPowF, duSqrtF, duPowIF, duFastSinF, duFastCosF.
+
+Double: duAbs, duMod, duSin, duCos, duTan, duCot, duLn, duLog, duExp, duPow, duSqrt, duPowI.
+
+## Проверка без CMake
+
+~~~sh
+gcc -std=c99 -O2 -Wall -Wextra -Werror -Iinclude src/du_math_f32.c src/du_math_f64.c tests/test_math.c -lm -o test_math
 ./test_math
-```
+~~~
 
-## Поведение
-
-- Аргументы тригонометрических функций передаются в радианах, вычисления используют `double`.
-- Для `dmLn(x)` необходимо `x > 0`, для `dmSqrt(x)` — `x >= 0`, для `dmLog(x, base)` — `x > 0`, `base > 0`, `base != 1`.
-- Недопустимые вещественные аргументы возвращают `NAN`; `dmLn(0)` возвращает `-INFINITY`.
-- `dmPow` допускает отрицательное основание только при целочисленном показателе.
-- Для больших аргументов тригонометрических функций и значений у пределов диапазона точность ограничена.
-- Реализация использует несколько функций стандартной библиотеки C (`fmod`, `remainder`, `frexp`, `ldexp` и др.). Не гарантируется преимущество по скорости перед `math.h`.
-
-Проект переработан из учебной реализации. Перед применением в критичных системах дополнительно проверяйте точность на целевой платформе.
+В IAR или Keil подключайте нужные исходники вручную. Измеряйте время выполнения и код на своей целевой платформе; преимуществ по скорости над оптимизированной libm и CMSIS-DSP не заявляется. Не включайте -ffast-math без оценки погрешности.
