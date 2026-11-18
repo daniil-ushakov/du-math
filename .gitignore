@@ -1,0 +1,7 @@
+*.o
+*.obj
+*.exe
+*.out
+math_demo
+test_math
+build/
